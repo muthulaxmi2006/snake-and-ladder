@@ -8,16 +8,24 @@
 </head>
 <body>
     <div class="game-container">
+        <h1>Snake and Ladder</h1>
         <div class="game-board"></div>
-        <div class="player-container">
+        <div class="players">
             <div class="player" id="player1"></div>
             <div class="player" id="player2"></div>
         </div>
-        <div class="dice-container">
-            <div class="dice" id="dice"></div>
+        <div class="game-controls">
+            <div class="dice-container">
+                <div class="dice" id="dice">
+                    <div class="dice-face face-1">1</div>
+                    <div class="dice-face face-2">2</div>
+                    <div class="dice-face face-3">3</div>
+                    <div class="dice-face face-4">4</div>
+                    <div class="dice-face face-5">5</div>
+                    <div class="dice-face face-6">6</div>
+                </div>
+            </div>
             <button id="roll-dice">Roll Dice</button>
-        </div>
-        <div class="game-info">
             <p>Current Player: <span id="current-player">1</span></p>
         </div>
         <button id="reset-game">Reset Game</button>

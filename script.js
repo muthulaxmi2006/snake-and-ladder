@@ -1,38 +1,21 @@
 document.addEventListener('DOMContentLoaded', () => {
     const board = document.querySelector('.game-board');
-    const player1 = document.getElementById('player1');
-    const player2 = document.getElementById('player2');
+    const players = [
+        { id: 1, element: document.getElementById('player1'), position: 1 },
+        { id: 2, element: document.getElementById('player2'), position: 1 }
+    ];
     const dice = document.getElementById('dice');
     const rollDiceBtn = document.getElementById('roll-dice');
-    const currentPlayerSpan = document.getElementById('current-player');
     const resetGameBtn = document.getElementById('reset-game');
+    const currentPlayerSpan = document.getElementById('current-player');
 
     const boardSize = 100;
-    const players = [
-        { id: 1, element: player1, position: 1 },
-        { id: 2, element: player2, position: 1 }
-    ];
     let currentPlayerIndex = 0;
+    let isRolling = false;
 
     const snakesAndLadders = {
-        16: 6,
-        47: 26,
-        49: 11,
-        56: 53,
-        62: 19,
-        64: 60,
-        87: 24,
-        93: 73,
-        95: 75,
-        98: 78,
-        4: 14,
-        9: 31,
-        20: 38,
-        28: 84,
-        40: 59,
-        51: 67,
-        63: 81,
-        71: 91
+        16: 6, 47: 26, 49: 11, 56: 53, 62: 19, 64: 60, 87: 24, 93: 73, 95: 75, 98: 78,
+        4: 14, 9: 31, 20: 38, 28: 84, 40: 59, 51: 67, 63: 81, 71: 91
     };
 
     function createBoard() {
@@ -41,6 +24,9 @@ document.addEventListener('DOMContentLoaded', () => {
             square.classList.add('square');
             square.dataset.square = i;
             square.textContent = i;
+            if (snakesAndLadders[i]) {
+                square.classList.add(i > snakesAndLadders[i] ? 'snake' : 'ladder');
+            }
             board.appendChild(square);
         }
     }
@@ -59,37 +45,58 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function rollDice() {
-        dice.style.animation = 'none';
-        void dice.offsetWidth; // Trigger reflow
-        dice.style.animation = 'roll 0.5s ease';
+        if (isRolling) return;
+        isRolling = true;
 
         const diceValue = Math.floor(Math.random() * 6) + 1;
-        dice.textContent = diceValue;
-        movePlayer(diceValue);
+        const rotations = {
+            1: 'rotateY(0deg)',
+            2: 'rotateY(-90deg)',
+            3: 'rotateX(-90deg)',
+            4: 'rotateX(90deg)',
+            5: 'rotateY(90deg)',
+            6: 'rotateY(180deg)'
+        };
+        dice.style.transform = `rotateX(720deg) rotateY(720deg) ${rotations[diceValue]}`;
+
+        setTimeout(() => {
+            movePlayer(diceValue);
+            isRolling = false;
+        }, 1500);
     }
 
     function movePlayer(steps) {
         const currentPlayer = players[currentPlayerIndex];
-        currentPlayer.position += steps;
+        const newPosition = currentPlayer.position + steps;
 
-        if (snakesAndLadders[currentPlayer.position]) {
-            const isSnake = currentPlayer.position > snakesAndLadders[currentPlayer.position];
-            currentPlayer.position = snakesAndLadders[currentPlayer.position];
-            if (isSnake) {
-                currentPlayer.element.classList.add('snake-animation');
-            } else {
-                currentPlayer.element.classList.add('ladder-animation');
-            }
+        if (newPosition <= boardSize) {
+            currentPlayer.position = newPosition;
+            updatePlayerPosition(currentPlayer);
+
+            setTimeout(() => {
+                const currentSquare = snakesAndLadders[currentPlayer.position];
+                if (currentSquare) {
+                    const isSnake = currentPlayer.position > currentSquare;
+                    currentPlayer.position = currentSquare;
+                    currentPlayer.element.classList.add(isSnake ? 'snake-animation' : 'ladder-animation');
+                    setTimeout(() => {
+                        updatePlayerPosition(currentPlayer);
+                        currentPlayer.element.classList.remove('snake-animation', 'ladder-animation');
+                        checkWinCondition();
+                    }, 1000);
+                } else {
+                    checkWinCondition();
+                }
+            }, 500);
+        } else {
+            switchPlayer();
         }
+    }
 
-        if (currentPlayer.position > boardSize) {
-            currentPlayer.position = boardSize;
-        }
-
-        updatePlayerPosition(currentPlayer);
-
+    function checkWinCondition() {
+        const currentPlayer = players[currentPlayerIndex];
         if (currentPlayer.position === boardSize) {
-            currentPlayer.element.classList.add('victory');
+            currentPlayer.element.classList.add('win-animation');
             setTimeout(() => {
                 alert(`Player ${currentPlayer.id} wins!`);
                 resetGame();
@@ -97,16 +104,12 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             switchPlayer();
         }
-
-        setTimeout(() => {
-            currentPlayer.element.classList.remove('snake-animation', 'ladder-animation');
-        }, 1000);
     }
 
     function resetGame() {
         players.forEach(player => {
             player.position = 1;
-            player.element.classList.remove('victory');
+            player.element.classList.remove('win-animation');
             updatePlayerPosition(player);
         });
         currentPlayerIndex = 0;
@@ -114,8 +117,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     createBoard();
-    resetGame();
-
+    players.forEach(updatePlayerPosition);
     rollDiceBtn.addEventListener('click', rollDice);
     resetGameBtn.addEventListener('click', resetGame);
 });
